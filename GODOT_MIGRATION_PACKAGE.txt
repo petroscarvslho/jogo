@@ -1,0 +1,302 @@
+# PACOTE DE MIGRAÇÃO PARA GODOT - SIMULADOR DE ANESTESIA
+# VERSÃO: FINAL (Pre-Migration)
+# DATA: 2024-12-09
+
+---
+
+## 1. VISÃO GERAL DO PROJETO (CONTEXTO PARA IA)
+
+**Objetivo**: Criar um jogo de simulação de anestesia focado em narrativa ("Novelinha") e realismo clínico, com estética Pixel Art (estilo Project Hospital).
+**Gênero**: Simulação Médica / Narrativa.
+**Loop Principal**:
+1.  **Briefing**: O jogador recebe o caso (Paciente, Cirurgia, Condições).
+2.  **Cirurgia (Gameplay)**:
+    *   Monitorar sinais vitais (HR, Pressão, SpO2).
+    *   Reagir a eventos scriptados (Dor, Sangramento, Bradicardia).
+    *   Administrar drogas e realizar procedimentos para manter o paciente vivo.
+3.  **Desfecho**: Vitória (Cirurgia concluída) ou Derrota (Óbito).
+
+**Estilo Visual**:
+- Pixel Art limpo e profissional.
+- Interface de Monitor Multiparamétrico (Glass/LCD).
+- Bandeja de instrumentos metálica com ícones.
+
+**Estilo Sonoro**:
+- Beeps de monitor (mudam pitch com a saturação).
+- Alarmes de emergência.
+- Som de sucesso/falha.
+
+---
+
+## 2. ARQUITETURA DE SISTEMAS
+
+O jogo roda sobre 4 pilares principais que devem ser recriados no Godot:
+
+1.  **VitalSignsSystem (Simulação)**:
+    - Matemático puro. Mantém os valores (HR, BP, SpO2).
+    - `update(dt)`: Interpola valores atuais para os "alvos".
+    - `applyDrug(id)`: Altera os "alvos" (Ex: Fentanil baixa HR).
+    
+2.  **ScenarioManager (Narrativa)**:
+    - Máquina de estados (Fases: Indução, Manutenção, etc).
+    - Lista de `ScriptedEvents` com gatilhos de tempo ou condição (Ex: "Se HR > 100, cirurgião reclama").
+    - Retorna status 'running', 'victory', 'defeat'.
+
+3.  **AudioManager (Feedback)**:
+    - Gera sons procedurais (Web Audio API no Phaser -> AudioStreamPlayer no Godot).
+    - Toca o "Beep" do coração sincronizado com o HR.
+
+4.  **Scene/UI (Apresentação)**:
+    - Desenha o Monitor (WaveformGraph + Números).
+    - Desenha a Sala de Cirurgia.
+    - Gerencia Inputs (Botões de drogas).
+
+---
+
+## 3. CÓDIGO FONTE COMPLETO (TYPESCRIPT)
+
+Abaixo está o código funcional atual. A IA receptora deve traduzir a lógica matemática 1:1 para GDScript.
+
+### A. SISTEMA DE SINAIS VITAIS (`VitalSignsSystem.ts`)
+```typescript
+export interface VitalSigns {
+    hr: number; // Heart Rate (bpm)
+    sbp: number; // Systolic BP (mmHg)
+    dbp: number; // Diastolic BP (mmHg)
+    spo2: number; // Oxygen Saturation (%)
+    temp: number; // Temperature (C)
+}
+
+export class VitalSignsSystem {
+    private vitals: VitalSigns;
+    private targetVitals: VitalSigns;
+
+    constructor() {
+        this.vitals = { hr: 80, sbp: 120, dbp: 80, spo2: 98, temp: 36.5 };
+        this.targetVitals = { ...this.vitals };
+    }
+
+    public update(deltaSeconds: number) {
+        // Smoothly interpolate current vitals towards target vitals
+        const lerp = (start: number, end: number, amt: number) => (1 - amt) * start + amt * end;
+        const speed = 0.5 * deltaSeconds;
+
+        this.vitals.hr = lerp(this.vitals.hr, this.targetVitals.hr, speed);
+        this.vitals.sbp = lerp(this.vitals.sbp, this.targetVitals.sbp, speed);
+        this.vitals.dbp = lerp(this.vitals.dbp, this.targetVitals.dbp, speed);
+        this.vitals.spo2 = lerp(this.vitals.spo2, this.targetVitals.spo2, speed);
+
+        // Add natural noise (heartbeat variability)
+        this.vitals.hr += (Math.random() - 0.5) * 0.5;
+        this.vitals.sbp += (Math.random() - 0.5) * 0.5;
+    }
+
+    public applyDrugEffect(drugId: string) {
+        switch (drugId) {
+            case 'drug_propofol':  this.targetVitals.sbp -= 20; this.targetVitals.dbp -= 15; this.targetVitals.spo2 -= 2; break;
+            case 'drug_fentanyl':  this.targetVitals.hr -= 10;  this.targetVitals.sbp -= 5; break;
+            case 'drug_ephedrine': this.targetVitals.sbp += 15; this.targetVitals.dbp += 10; this.targetVitals.hr += 10; break;
+            case 'drug_atropine':  this.targetVitals.hr += 20; break;
+        }
+        this.clampTargets();
+    }
+
+    public applyProcedureEffect(procedure: string) {
+        if (procedure === 'spinal') { this.targetVitals.sbp -= 30; this.targetVitals.hr -= 5; }
+        else if (procedure === 'intubation') { this.targetVitals.hr += 20; this.targetVitals.sbp += 20; }
+    }
+
+    public applyEvent(eventType: string) {
+        switch (eventType) {
+            case 'pain':     this.targetVitals.hr += 15; this.targetVitals.sbp += 15; break;
+            case 'bleeding': this.targetVitals.hr += 10; this.targetVitals.sbp -= 15; break;
+        }
+        this.clampTargets();
+    }
+
+    private clampTargets() {
+        this.targetVitals.hr = Math.max(30, Math.min(180, this.targetVitals.hr));
+        this.targetVitals.sbp = Math.max(40, Math.min(220, this.targetVitals.sbp));
+        this.targetVitals.spo2 = Math.max(0, Math.min(100, this.targetVitals.spo2));
+    }
+
+    public getVitals(): VitalSigns { return { ...this.vitals }; }
+}
+```
+
+### B. GERENCIADOR DE CENÁRIOS (`ScenarioManager.ts`)
+```typescript
+export enum CasePhase { BRIEFING, INDUCTION, MAINTENANCE, EMERGENCE, RECOVERY }
+
+export interface ScriptedEvent {
+    id: string;
+    triggerTime?: number;
+    triggerCondition?: (vitals: any) => boolean;
+    dialogue: string;
+    autoEffect?: string;
+    requiredAction?: string;
+    triggered?: boolean;
+    solved?: boolean;
+}
+
+export class ScenarioManager {
+    private currentCase: any; // See TS file for struct
+    private currentPhase: CasePhase;
+    private phaseTimer: number = 0;
+    private activeEvents: ScriptedEvent[] = [];
+
+    // Callbacks
+    public onDialogue?: (msg: string) => void;
+    public onEventEffect?: (effectId: string) => void;
+
+    /* ... Constructor initializes Case 1 (Coletomia) ... */
+    constructor() {
+        this.currentCase = {
+            id: 'case001',
+            phases: {
+                [CasePhase.INDUCTION]: [
+                    { id: 'ind_start', triggerTime: 2, dialogue: 'Pode induzir, doutor. Estou aguardando.' },
+                    { id: 'ind_wait', triggerTime: 10, dialogue: 'Paciente ainda acordado... vai demorar?', triggerCondition: (v) => v.hr > 90 }
+                ],
+                [CasePhase.MAINTENANCE]: [
+                    { id: 'incisao', triggerTime: 5, dialogue: 'Bisturi. Incisão iniciada!', autoEffect: 'pain' },
+                    { id: 'bleed_event', triggerTime: 20, dialogue: 'Sangramento na cavidade! A pressão vai cair!', autoEffect: 'bleeding' },
+                    { id: 'closing', triggerTime: 40, dialogue: 'Hemorragia controlada. Fechando planos.' }
+                ]
+            }
+        };
+        this.currentPhase = CasePhase.BRIEFING;
+    }
+
+    public startPhase(phase: CasePhase) {
+        this.currentPhase = phase;
+        this.phaseTimer = 0;
+        this.activeEvents = this.currentCase.phases[phase] ? [...this.currentCase.phases[phase]!] : [];
+        this.activeEvents.forEach(e => e.solved = false);
+    }
+
+    public update(dt: number, vitals: any): 'running' | 'victory' | 'defeat' {
+        this.phaseTimer += dt;
+
+        // 1. Game Over Check
+        if (vitals.hr < 30 || vitals.hr > 170 || vitals.spo2 < 70) return 'defeat';
+
+        // 2. Event Triggers
+        this.activeEvents.forEach(evt => {
+            if (evt.solved || evt.triggered) return;
+            
+            let ready = false;
+            if (evt.triggerTime !== undefined && this.phaseTimer >= evt.triggerTime) ready = true;
+            if (evt.triggerCondition && evt.triggerCondition(vitals)) ready = true;
+
+            if (ready) {
+                evt.triggered = true;
+                if (this.onDialogue) this.onDialogue(evt.dialogue);
+                if (this.onEventEffect && evt.autoEffect) this.onEventEffect(evt.autoEffect);
+            }
+        });
+
+        // 3. Victory Check (End of Maintenance)
+        const allResolved = this.activeEvents.every(e => e.solved || !e.requiredAction);
+        if (allResolved && this.activeEvents.length > 0) {
+             const lastEventTime = this.activeEvents[this.activeEvents.length - 1].triggerTime || 0;
+             if (this.phaseTimer > lastEventTime + 5 && this.currentPhase === CasePhase.MAINTENANCE) {
+                 return 'victory';
+             }
+        }
+
+        return 'running';
+    }
+
+    public handleAction(actionId: string): boolean {
+        const evt = this.activeEvents.find(e => e.triggered && !e.solved && e.requiredAction === actionId);
+        if (evt) {
+            evt.solved = true;
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+### C. MONITOR DE WAVES (`WaveformMonitor.ts`)
+*(Lógica crítica para o gráfico de EKG)*
+```typescript
+export class WaveformMonitor {
+    private data: number[] = [];
+    private phase: number = 0;
+
+    // ... setup graphics ...
+
+    public update(dt: number, hr: number) {
+        // 1. Shift Data Array
+        this.data.shift();
+
+        // 2. Calculate Waveform Point (P-QRS-T Simulation)
+        // 60 BPM = 1 beat per second
+        const cycleDuration = 60 / Math.max(hr, 1);
+        this.phase += dt;
+        if (this.phase >= cycleDuration) this.phase = 0; // Loop
+        
+        const t = this.phase / cycleDuration;
+        let newVal = 0;
+
+        // P Wave (0.1 - 0.2)
+        if (t > 0.1 && t < 0.2) newVal = -5 * Math.sin((t-0.1)*10 * Math.PI);
+        // QRS Complex (The Spike)
+        else if (t > 0.3 && t < 0.32) newVal = 5; 
+        else if (t >= 0.32 && t < 0.36) newVal = -40; // R Wave (Peak - Up is -Y)
+        else if (t >= 0.36 && t < 0.38) newVal = 10;
+        // T Wave (0.5 - 0.7)
+        else if (t > 0.5 && t < 0.7) newVal = -10 * Math.sin((t-0.5)*5 * Math.PI);
+
+        // Noise & Flatline logic
+        newVal += (Math.random() - 0.5) * 2;
+        if (hr < 10) newVal = (Math.random() - 0.5) * 1;
+
+        this.data.push(newVal);
+        // this.draw(); // Implement drawing in Godot
+    }
+}
+```
+
+---
+
+## 4. GUIA DE MIGRAÇÃO (TIPS PARA GODOT)
+
+### Estrutura de Cena (Godot Nodes)
+Recomendo criar uma Cena principal `SurgeryRoom.tscn`:
+- **Node2D (Root)**
+    - **Sprite2D (Background)**: Tiled Floor.
+    - **Sprite2D (Patient)**: No centro.
+    - **CanvasLayer (UI)**: Para garantir que a UI fique sobre o jogo.
+        - **ColorRect (TopBar)**: Fundo do monitor. (Container)
+            - **Label (Labels de Texto)**: HR, BP, SpO2.
+            - **Line2D (Waveform)**: Para desenhar o gráfico de EKG (Melhor que desenhar pixel a pixel).
+        - **HBoxContainer (BottomTray)**: Para os botões de ação na parte inferior.
+            - **TextureButton**: Cada droga/ação.
+
+### Tradução de Conceitos Chave
+1.  **Loop Principal**:
+    - Phaser: `update(time, delta)` (delta em ms).
+    - Godot: `_process(delta)` (delta em segundos). *Atenção: A matemática de `current_time += delta` é igual.*
+
+2.  **Sinais Vitais (Logic)**:
+    - Crie um Node `VitalSignsSystem` (pode ser um Node puro ou Resource) que roda o script matemático.
+    - Use `LERP` (Linear Interpolation) do Godot: `current = lerpf(current, target, speed * delta)`.
+
+3.  **Gráfico EKG (Visual)**:
+    - Em vez de `Graphics.lineTo`, use um `Line2D` node no Godot.
+    - Alimente o array de `points` do `Line2D` a cada frame. 
+    - Ex: `line_2d.points.append(new_vector)` e `line_2d.points.remove_at(0)` para fazer o scroll.
+
+4.  **Áudio**:
+    - Phaser usa WebAudio. Godot usa `AudioStreamPlayer`.
+    - Para o "Beep" variando o pitch: `audio_player.pitch_scale = novo_pitch` (ex: 1.0 para normal, 0.5 para grave/perigo).
+
+5.  **Assets Procedurais -> Reais**:
+    - No Phaser, usamos código para desenhar ícones. No Godot, é muito mais fácil usar PNGs reais.
+    - Sugestão: Use um programa de Pixel Art (Aseprite) para desenhar os ícones de Seringa, Tubo e Máscara baseados no código que fizemos, e importe como `.png`.
+
+---
+**FIM DO PACOTE**

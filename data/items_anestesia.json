@@ -1,0 +1,211 @@
+[
+    {
+        "id": "drug_propofol",
+        "name": "Propofol 1% 20mL",
+        "category": "hypnotic",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "10 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_etomidate",
+        "name": "Etomidato 2mg/mL",
+        "category": "hypnotic",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "2 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": false
+    },
+    {
+        "id": "drug_ketamine",
+        "name": "Cetamina 50mg/mL",
+        "category": "hypnotic",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "50 mg/mL",
+        "route": [
+            "IV",
+            "IM"
+        ],
+        "is_critical": false
+    },
+    {
+        "id": "drug_fentanyl",
+        "name": "Fentanil 50mcg/mL",
+        "category": "opioid",
+        "subtype": "ampoule",
+        "dose_unit": "mcg",
+        "concentration": "50 mcg/mL",
+        "route": [
+            "IV",
+            "Epidural"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_remifentanil",
+        "name": "Remifentanil 2mg",
+        "category": "opioid",
+        "subtype": "vial",
+        "dose_unit": "mcg",
+        "concentration": "Reconst.",
+        "route": [
+            "IV"
+        ],
+        "is_critical": false
+    },
+    {
+        "id": "drug_midazolam",
+        "name": "Midazolam 5mg/5mL",
+        "category": "hypnotic",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "1 mg/mL",
+        "route": [
+            "IV",
+            "IM"
+        ],
+        "is_critical": false
+    },
+    {
+        "id": "drug_rocuronium",
+        "name": "Rocurônio 10mg/mL",
+        "category": "neuromuscular_blocker",
+        "subtype": "vial",
+        "dose_unit": "mg",
+        "concentration": "10 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_succinylcholine",
+        "name": "Succinilcolina 100mg",
+        "category": "neuromuscular_blocker",
+        "subtype": "vial",
+        "dose_unit": "mg",
+        "concentration": "Reconst.",
+        "route": [
+            "IV"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_ephedrine",
+        "name": "Efedrina 50mg/mL",
+        "category": "vasopressor",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "50 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_norepinephrine",
+        "name": "Noradrenalina 2mg/mL",
+        "category": "vasopressor",
+        "subtype": "ampoule",
+        "dose_unit": "mcg",
+        "concentration": "2 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_atropine",
+        "name": "Atropina 0.25mg/mL",
+        "category": "vasopressor",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "0.25 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_lidocaine",
+        "name": "Lidocaína 2%",
+        "category": "local_anesthetic",
+        "subtype": "vial",
+        "dose_unit": "mg",
+        "concentration": "20 mg/mL",
+        "route": [
+            "Local",
+            "IV",
+            "Epidural"
+        ],
+        "is_critical": false
+    },
+    {
+        "id": "drug_bupivacaine_heavy",
+        "name": "Bupivacaína Pesada 0.5%",
+        "category": "local_anesthetic",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "5 mg/mL",
+        "route": [
+            "Spinal"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "drug_ondansetron",
+        "name": "Ondansetrona 4mg/2mL",
+        "category": "other",
+        "subtype": "ampoule",
+        "dose_unit": "mg",
+        "concentration": "2 mg/mL",
+        "route": [
+            "IV"
+        ],
+        "is_critical": false
+    },
+    {
+        "id": "mat_tube_7.5",
+        "name": "Tubo Traqueal 7.5mm",
+        "category": "airway_material",
+        "subtype": "device",
+        "dose_unit": "un",
+        "concentration": "-",
+        "route": [
+            "Airway"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "mat_laryngoscope",
+        "name": "Laringoscópio + Lâmina",
+        "category": "airway_material",
+        "subtype": "device",
+        "dose_unit": "un",
+        "concentration": "-",
+        "route": [
+            "Airway"
+        ],
+        "is_critical": true
+    },
+    {
+        "id": "mat_spinal_needle",
+        "name": "Agulha Raqui 27G",
+        "category": "epidural_material",
+        "subtype": "device",
+        "dose_unit": "un",
+        "concentration": "-",
+        "route": [
+            "Neuraxial"
+        ],
+        "is_critical": true
+    }
+]
