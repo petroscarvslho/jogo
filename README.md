@@ -1,59 +1,37 @@
-# Jogo Anest
+# USG Game — Bloqueio Supraclavicular (v0.1.0)
 
-Um RPG / Simulação 2D em Pixel Art sobre a rotina de um médico anestesiologista. Jogo em estilo "Top-Down" (Zelda/Pokémon) focado em casos clínicos, escolha de drogas e gestão de crises no centro cirúrgico.
+Protótipo web simples de ultrassonografia para treino de bloqueio supraclavicular do plexo braquial. O render é feito em canvas com speckle fake e camadas anatômicas estilizadas para rodar direto no navegador (inclusive Safari no iPhone).
 
-## 🚀 Como Rodar o Jogo
-
-Este jogo feito com tecnologias web modernas (HTML5 + Phaser 3). Siga os passos:
-
-### Pré-requisitos
-* Ter o **Node.js** instalado (v16 ou superior).
-
-### Instalação
-1. Abra o terminal na pasta do projeto.
-2. Instale as dependências:
+## 🚀 Rodando localmente
+1. Instale Python 3 (já vem no macOS e em muitas distros Linux).
+2. No terminal, dentro da pasta do projeto, rode um servidor simples:
    ```bash
-   npm install
+   python -m http.server 8000
    ```
+3. Abra `http://localhost:8000` no navegador.
 
-### Jogando (Modo Desenvolvimento)
-1. Rode o servidor local:
-   ```bash
-   npm run dev
-   ```
-2. Clique no link que aparece (geralmente `http://localhost:5173`) ou copie para o navegador.
+> Abrir o `index.html` direto do sistema de arquivos pode dar tela preta no iOS. Use sempre um servidor, mesmo que simples.
 
-O jogo foi pensado para **Mobile (modo retrato)**. Se estiver no computador, abra as ferramentas de desenvolvedor (F12) e ative o modo dispositivo móvel (Ctrl+Shift+M) com resolução 1080x1920 ou similar.
+## 🌐 GitHub Pages
+- Branch: `main`
+- Pasta: `/(root)`
+- URL esperada depois de publicar: `https://<seu-usuario>.github.io/jogo/`
 
-## 🎮 Controles
+Ative nas configurações do repositório (Settings → Pages) escolhendo o branch `main` e a pasta `/(root)`.
 
-* **Computador**:
-    * **W, A, S, D** ou **Setas**: Movimentar o personagem.
-    * **Mouse**: Clicar nos botões de interação.
-* **Celular / Touch**:
-    * **Joystick Virtual (Canto Inferior Esquerdo)**: Movimentar.
-    * **Botão A (Canto Inferior Direito)**: Interagir com objetos/pacientes.
+## 🧼 Limpando cache no Safari
+Safari em iOS é teimoso com cache. Dicas:
+- Abra em aba anônima.
+- Acrescente uma query string na URL ou no script, por exemplo `?v=2`.
+- No HTML já usamos `<script src="main.js?v=0.1.0"></script>` para quebrar cache automaticamente após mudanças.
 
-## 📂 Estrutura de Arquivos
+## 🎮 Controles do protótipo
+- Arraste o probe no canvas para deslizar (touch ou mouse).
+- Sliders: ganho, profundidade, pressão, tilt.
+- Score prioriza plexo no centro, artéria visível e tilt moderado (0–1000).
 
-* `src/scenes/`: Cenas do jogo (Hospital, Cirurgia, Menu).
-* `src/entities/`: Definições de Pacientes e Itens.
-* `data/`: Arquivos JSON com a lista de Pacientes e Medicamentos.
-* `assets/`: Onde colocar suas imagens reais.
+## 🧩 Estrutura
+- `index.html`: página e UI.
+- `main.js`: lógica de render e simulação fake.
 
-## 🎨 Adicionando seus Assets
-
-Atualmente o jogo usa "placeholders" (quadrados coloridos). Para usar seus assets pixel art:
-
-1. Coloque seus arquivos PNG em `assets/`.
-2. Edite o arquivo `src/scenes/Preload.ts`.
-3. Na função `preload()`, troque os placeholders por:
-   ```typescript
-   this.load.image('player', 'assets/characters/medico.png');
-   this.load.image('tile_floor', 'assets/hospital_tileset/floor.png');
-   ```
-
-## 📝 Créditos e Licença
-
-Desenvolvido como projeto educacional gamificado para Anestesiologia.
-Assets de arte (referência): Modern Interiors.
+Sinta-se à vontade para iterar e adicionar novas features (agulha in-plane, injeção, etc.).
